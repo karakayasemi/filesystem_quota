@@ -42,9 +42,8 @@ class QuotaService {
 	 * @throws \Exception
 	 */
 	public function freeSpace($user) {
-		return 10000000;
 		$quotServiceHost = \OC::$server->getConfig()->getAppValue('filesystem_quota', 'quota_service_uri');
-		$options['headers']=array('uid'=>$ldapUidNumber);
+		$options['headers']=array('uid'=>$user);
 		try {
 			$response = $this->client->get($quotServiceHost, $options);
 		} catch (\Exception $e) {

@@ -20,8 +20,6 @@
  */
 
 namespace OCA\Filesystem_Quota\AppInfo;
-use OC\User\Backend;
-use OC\User\Database;
 use OCA\Filesystem_Quota\QuotaService;
 use OCA\Filesystem_Quota\Wrapper\FilesystemQuota;
 
@@ -30,7 +28,7 @@ use OCP\AppFramework\IAppContainer;
 
 class Application extends App {
 	public function __construct(array $urlParams=array()){
-		parent::__construct('filesystem_quota taslak', $urlParams);
+		parent::__construct('filesystem_quota', $urlParams);
 		$container = $this->getContainer();
 
 		$container->registerService('QuotaService', function (IAppContainer $c) {
@@ -46,10 +44,18 @@ class Application extends App {
 		\OC\Files\Filesystem::addStorageWrapper(
 			'oc_filesystem_quota',
 			function ($mountPoint, $storage) {
-				return new FilesystemQuota(array(
-					'storage' => $storage,
-					'quota_service' => $this->getContainer()->query('QuotaService')
-				));
-			});
+				/**
+				 * @var \OC\Files\Storage\Storage $storage
+				 */
+				if ($storage->instanceOfStorage('\OC\Files\Storage\Home')
+					|| $storage->instanceOfStorage('\OC\Files\ObjectStore\HomeObjectStoreStorage')
+				) {
+					return new FilesystemQuota(array(
+						'storage' => $storage,
+						'quota_service' => $this->getContainer()->query('QuotaService')
+					));
+				}
+				return $storage;
+		});
 	}
 }
