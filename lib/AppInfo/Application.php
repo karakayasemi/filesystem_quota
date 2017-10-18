@@ -20,8 +20,10 @@
  */
 
 namespace OCA\Filesystem_Quota\AppInfo;
+use OC\User\Backend;
+use OC\User\Database;
 use OCA\Filesystem_Quota\QuotaService;
-use OCA\Filesystem_Quota\Wrapper\FilesystemQuotaWrapper;
+use OCA\Filesystem_Quota\Wrapper\FilesystemQuota;
 
 use \OCP\AppFramework\App;
 use OCP\AppFramework\IAppContainer;
@@ -38,13 +40,13 @@ class Application extends App {
 
 
 	/**
-	 * Add filesystem quota wrapper for local storages
+	 * Add filesystem quota wrapper for storages
 	 */
 	public function setupWrapper(){
 		\OC\Files\Filesystem::addStorageWrapper(
 			'oc_filesystem_quota',
 			function ($mountPoint, $storage) {
-				return new FilesystemQuotaWrapper(array(
+				return new FilesystemQuota(array(
 					'storage' => $storage,
 					'quota_service' => $this->getContainer()->query('QuotaService')
 				));

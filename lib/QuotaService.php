@@ -23,8 +23,7 @@ use OCP\AppFramework\Http;
 use OCP\Http\Client\IClient;
 use OC\HintException;
 
-class QuotaService
-{
+class QuotaService {
 	/**
 	 * @var IClient $client
 	 */
@@ -35,10 +34,16 @@ class QuotaService
 	public function __construct($client) {
 		$this->client = $client;
 	}
-	public function freeSpace($ldapUidNumber)
-	{
-		return 10000000000000;
-		$quotServiceHost = \OC::$server->getConfig()->getAppValue('filesystem_quota taslak', 'quota_service_uri');
+
+	/**
+	 * @param string $user
+	 * @return int
+	 * @throws HintException
+	 * @throws \Exception
+	 */
+	public function freeSpace($user) {
+		return 100000000000;
+		$quotServiceHost = \OC::$server->getConfig()->getAppValue('filesystem_quota', 'quota_service_uri');
 		$options['headers']=array('uid'=>$ldapUidNumber);
 		try {
 			$response = $this->client->get($quotServiceHost, $options);
