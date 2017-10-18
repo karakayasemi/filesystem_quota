@@ -51,6 +51,8 @@ class FilesystemQuotaTest extends \Test\Files\Storage\Storage {
 		$this->quotaServiceMock = $this->getMockBuilder('OCA\Filesystem_Quota\QuotaService')
 			->disableOriginalConstructor()
 			->getMock();
+		$this->quotaServiceMock->expects($this->any())->method('freeSpace')
+			->willReturn(10000000);
 		$this->tmpDir = \OC::$server->getTempManager()->getTemporaryFolder();
 		$storage = new \OC\Files\Storage\Local(['datadir' => $this->tmpDir]);
 		$this->instance = new FilesystemQuota(['storage' => $storage, 'quota_service' => $this->quotaServiceMock]);
@@ -68,9 +70,12 @@ class FilesystemQuotaTest extends \Test\Files\Storage\Storage {
 		$storage = new \OC\Files\Storage\Local(['datadir' => $this->tmpDir]);
 		$storage->mkdir('files');
 		$storage->getScanner()->scan('');
-		$this->quotaServiceMock->expects($this->any())->method('freeSpace')
+		$quotaServiceMock = $this->getMockBuilder('OCA\Filesystem_Quota\QuotaService')
+			->disableOriginalConstructor()
+			->getMock();
+		$quotaServiceMock->expects($this->any())->method('freeSpace')
 			->willReturn($limit);
-		return new FilesystemQuota(['storage' => $storage, 'quota_service' => $this->quotaServiceMock]);
+		return new FilesystemQuota(['storage' => $storage, 'quota_service' => $quotaServiceMock]);
 	}
 
 	public function testTouchCreateFile() {
@@ -83,6 +88,106 @@ class FilesystemQuotaTest extends \Test\Files\Storage\Storage {
 	public function testFilePutContentsNotEnoughSpace() {
 		$instance = $this->getLimitedStorage(3);
 		$this->assertFalse($instance->file_put_contents('files/foo', 'foobar'));
+	}
+
+	public function testCopyNotEnoughSpace() {
+		$storage = new \OC\Files\Storage\Local(['datadir' => $this->tmpDir]);
+		$storage->mkdir('files');
+		$storage->getScanner()->scan('');
+		$quotaServiceMock = $this->getMockBuilder('OCA\Filesystem_Quota\QuotaService')
+			->disableOriginalConstructor()
+			->getMock();
+		$quotaServiceMock->expects($this->any())->method('freeSpace')
+			->willReturnOnConsecutiveCalls(9,3);
+		$instance = new FilesystemQuota(['storage' => $storage, 'quota_service' => $quotaServiceMock]);
+		$this->assertEquals(6, $instance->file_put_contents('files/foo', 'foobar'));
+		$instance->getScanner()->scan('');
+		$this->assertFalse($instance->copy('files/foo', 'files/bar'));
+	}
+
+	public function testFreeSpace() {
+		$instance = $this->getLimitedStorage(9);
+		$this->assertEquals(9, $instance->free_space(''));
+	}
+
+	public function testStreamCopyWithEnoughSpace() {
+		$instance = $this->getLimitedStorage(16);
+		$inputStream = fopen('data://text/plain,foobarqwerty', 'r');
+		$outputStream = $instance->fopen('files/foo', 'w+');
+		list($count, $result) = \OC_Helper::streamCopy($inputStream, $outputStream);
+		$this->assertEquals(12, $count);
+		$this->assertTrue($result);
+		fclose($inputStream);
+		fclose($outputStream);
+	}
+
+	public function testReturnFalseWhenFopenFailed() {
+		/**@var $failStorage \PHPUnit_Framework_MockObject_MockObject | \OC\Files\Storage\Local*/
+		$failStorage = $this->getMockBuilder('\OC\Files\Storage\Local')
+			->setMethods(['fopen'])
+			->setConstructorArgs([['datadir' => $this->tmpDir]])
+			->getMock();
+
+		$failStorage->expects($this->any())
+			->method('fopen')
+			->will($this->returnValue(false));
+
+		$this->assertFalse($failStorage->fopen('failedfopen', 'r'));
+	}
+
+	public function testReturnRegularStreamOnRead() {
+		$instance = $this->getLimitedStorage(9);
+
+		// create test file first
+		$stream = $instance->fopen('files/foo', 'w+');
+		fwrite($stream, 'blablacontent');
+		fclose($stream);
+
+		$stream = $instance->fopen('files/foo', 'r');
+		$meta = stream_get_meta_data($stream);
+		$this->assertEquals('plainfile', $meta['wrapper_type']);
+		fclose($stream);
+
+		$stream = $instance->fopen('files/foo', 'rb');
+		$meta = stream_get_meta_data($stream);
+		$this->assertEquals('plainfile', $meta['wrapper_type']);
+		fclose($stream);
+	}
+
+	public function testReturnRegularStreamWhenOutsideFiles() {
+		$instance = $this->getLimitedStorage(9);
+		$instance->mkdir('files_other');
+
+		// create test file first
+		$stream = $instance->fopen('files_other/foo', 'w+');
+		$meta = stream_get_meta_data($stream);
+		$this->assertEquals('plainfile', $meta['wrapper_type']);
+		fclose($stream);
+	}
+
+	public function testSpaceRoot() {
+		$storage = $this->getMockBuilder('\OC\Files\Storage\Local')->disableOriginalConstructor()->getMock();
+		$cache = $this->getMockBuilder('\OC\Files\Cache\Cache')->disableOriginalConstructor()->getMock();
+		$storage->expects($this->once())
+			->method('getCache')
+			->will($this->returnValue($cache));
+		$storage->expects($this->once())
+			->method('free_space')
+			->will($this->returnValue(2048));
+		$cache->expects($this->once())
+			->method('get')
+			->with('files')
+			->will($this->returnValue(new CacheEntry(['size' => 50])));
+
+		$instance = new \OC\Files\Storage\Wrapper\Quota(['storage' => $storage, 'quota' => 1024, 'root' => 'files']);
+
+		$this->assertEquals(1024 - 50, $instance->free_space(''));
+	}
+
+	public function testInstanceOfStorageWrapper() {
+		$this->assertTrue($this->instance->instanceOfStorage('\OC\Files\Storage\Local'));
+		$this->assertTrue($this->instance->instanceOfStorage('\OC\Files\Storage\Wrapper\Wrapper'));
+		$this->assertTrue($this->instance->instanceOfStorage('OCA\Filesystem_Quota\Wrapper\FilesystemQuota'));
 	}
 
 }
