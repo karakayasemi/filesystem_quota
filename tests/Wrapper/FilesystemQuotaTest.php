@@ -78,13 +78,6 @@ class FilesystemQuotaTest extends \Test\Files\Storage\Storage {
 		return new FilesystemQuota(['storage' => $storage, 'quota_service' => $quotaServiceMock]);
 	}
 
-	public function testTouchCreateFile() {
-		$this->assertFalse($this->instance->file_exists('touch'));
-		// returns true on success
-		$this->assertFalse($this->instance->touch('touch'));
-		$this->assertFalse($this->instance->file_exists('touch'));
-	}
-
 	public function testFilePutContentsNotEnoughSpace() {
 		$instance = $this->getLimitedStorage(3);
 		$this->assertFalse($instance->file_put_contents('files/foo', 'foobar'));

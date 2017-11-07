@@ -178,11 +178,6 @@ class FilesystemQuota extends Wrapper{
 		}
 	}
 
-	/** {@inheritdoc} */
-	public function touch($path, $mtime = null) {
-		return false;
-	}
-
 	/**
 	 * see http://php.net/manual/en/function.chown.php
 	 *
