@@ -177,6 +177,18 @@ class FilesystemQuota extends Wrapper{
 			return false;
 		}
 	}
+	
+	/**
+	 * {@inheritdoc}
+	 */
+	public function touch($path, $mtime = null) {
+		if ($this->file_exists($path)) {
+			return false;
+		} else {
+			$this->file_put_contents($path, '');
+			return true;
+		}
+	}
 
 	/**
 	 * see http://php.net/manual/en/function.chown.php
