@@ -61,7 +61,7 @@ class FilesystemQuota extends Wrapper{
 		$this->quotaService = $parameters['quota_service'];
 		$this->chownExecutablePath = \OC_App::getAppPath('filesystem_quota') . '/lib/chown';
 		$this->umask = \OC::$server->getConfig()->getAppValue('filesystem_quota', 'umask', '007');
-		$this->ownerGroup = \OC::$server->getConfig()->getAppValue('filesystem_quota', 'owner_gid', '1000');
+		$this->ownerGroup = \OC::$server->getConfig()->getAppValue('filesystem_quota', 'owner_gid', '300');
 	}
 
 	/**
@@ -198,7 +198,7 @@ class FilesystemQuota extends Wrapper{
 	 * @return boolean
 	 */
 	public function chown($path, $user) {
-		$chownScript = $this->chownExecutablePath . ' "' . $user . '" ' . $this->ownerGroup . " " . $this->umask . ' "' . $path . '" ';
+		$chownScript = $this->chownExecutablePath . ' "' . $user . '" ' . $this->ownerGroup . " " . $this->umask . ' "' . escapeshellcmd($path) . '" ';
 		$output = array();
 		exec($chownScript, $output, $returnValue);
 		return $returnValue;
