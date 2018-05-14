@@ -19,11 +19,15 @@ install:
   - bash ./before_install.sh filesystem_quota $CORE_BRANCH $DB
   - cd ../core
   - php occ app:enable filesystem_quota
+  - cd apps/filesystem_quota/lib
+  - gcc -o chown chown.c -DTEST
+  - sudo chown root:travis chown
+  - sudo chmod 4777 chown
 
 script:
   # execute unit tests
-  - cd apps/filesystem_quota/tests
-  - ../../../lib/composer/phpunit/phpunit/phpunit --configuration phpunit.xml
+  - cd ../tests
+  - phpunit --configuration phpunit.xml
 
 matrix:
   include:

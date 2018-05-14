@@ -3,7 +3,7 @@
     <id>filesystem_quota</id>
     <name>Filesystem Quota</name>
     <description>It gives files ownership to user. Main purpose of writing this app, use for local filesystem quota.</description>
-    <version>0.0.1</version>
+    <version>0.1.0</version>
     <summary>An ownCloud application to use filesystem quota</summary>
     <licence>AGPL</licence>
     <author>Semih Serhat Karakaya</author>
@@ -17,7 +17,7 @@
         <admin>OCA\Filesystem_Quota\Panels\AdminPanel</admin>
     </settings>
     <dependencies>
-        <owncloud min-version="9.0" max-version="10.0"/>
+        <owncloud min-version="10.0" max-version="10.1"/>
     </dependencies>
     <repository type="git">https://github.com/karakayasemi/filesystem_quota.git</repository>
 </info>
