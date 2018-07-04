@@ -18,25 +18,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  *
  */
-
 namespace OCA\Filesystem_Quota\AppInfo;
+use OCA\Filesystem_Quota\LdapService;
 use OCA\Filesystem_Quota\QuotaService;
 use OCA\Filesystem_Quota\Wrapper\FilesystemQuota;
-
 use \OCP\AppFramework\App;
 use OCP\AppFramework\IAppContainer;
-
 class Application extends App {
 	public function __construct(array $urlParams=array()){
 		parent::__construct('filesystem_quota', $urlParams);
 		$container = $this->getContainer();
-
 		$container->registerService('QuotaService', function (IAppContainer $c) {
 			return new QuotaService(\OC::$server->getHTTPClientService()->newClient());
 		});
+		$container->registerService('LdapService', function (IAppContainer $c) {
+			return new LdapService($this->getContainer()->query('OCP\ISession'));
+		});
 	}
-
-
 	/**
 	 * Add filesystem quota wrapper for storages
 	 */
@@ -52,10 +50,11 @@ class Application extends App {
 				) {
 					return new FilesystemQuota(array(
 						'storage' => $storage,
-						'quota_service' => $this->getContainer()->query('QuotaService')
+						'quota_service' => $this->getContainer()->query('QuotaService'),
+						'ldap_service' => $this->getContainer()->query('LdapService')
 					));
 				}
 				return $storage;
-		});
+			});
 	}
 }
