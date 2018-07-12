@@ -36,7 +36,7 @@ class AdminPanel implements ISettings {
 			'owner_gid' => \OC::$server->getConfig()->getAppValue(
 				'filesystem_quota',
 				'owner_gid',
-				'48'
+				'300'
 			),
 		];
 		$tmpl = new Template('filesystem_quota', 'settings-admin');
