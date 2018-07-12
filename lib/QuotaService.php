@@ -22,40 +22,42 @@ namespace OCA\Filesystem_Quota;
 use OCP\AppFramework\Http;
 use OCP\Http\Client\IClient;
 use OC\HintException;
-
 class QuotaService {
-	/**
-	 * @var IClient $client
-	 */
-	protected $client;
-	/**
-	 * @param IClient $client
-	 */
-	public function __construct($client) {
-		$this->client = $client;
-	}
-
-	/**
-	 * @param string $user
-	 * @return int
-	 * @throws HintException
-	 * @throws \Exception
-	 */
-	public function freeSpace($user) {
-		$quotServiceHost = \OC::$server->getConfig()->getAppValue('filesystem_quota', 'quota_service_uri');
-		$options['headers']=array('uid'=>$user);
-		try {
-			$response = $this->client->get($quotServiceHost, $options);
-		} catch (\Exception $e) {
-			throw $e;
-		}
-		if ($response->getStatusCode() === Http::STATUS_OK) {
-			$quotaResponse = json_decode($response->getBody(), true);
-			$quotaLimit = $quotaResponse['quota_limit'];
-			$currentUsage = $quotaResponse['current_usage'];
-			return $quotaLimit-$currentUsage;
-		} else {
-			throw new HintException('Quota response is not okay.');
-		}
-	}
+    /**
+     * @var IClient $client
+     */
+    protected $client;
+    /**
+     * @param IClient $client
+     */
+    public function __construct($client) {
+        $this->client = $client;
+    }
+    /**
+     * @param string $user
+     * @return int
+     * @throws HintException
+     * @throws \Exception
+     */
+    public function freeSpace($user) {
+        $quotServiceHost = \OC::$server->getConfig()->getAppValue(
+            'filesystem_quota',
+            'quota_service_uri',
+            'http://localhost/quota.php'
+        );
+        $options['headers']=array('uid'=>$user);
+        try {
+            $response = $this->client->get($quotServiceHost, $options);
+        } catch (\Exception $e) {
+            return 0;
+        }
+        if ($response->getStatusCode() === Http::STATUS_OK) {
+            $quotaResponse = json_decode($response->getBody(), true);
+            $quotaLimit = $quotaResponse['quota_limit'];
+            $currentUsage = $quotaResponse['current_usage'];
+            return $quotaLimit-$currentUsage;
+        } else {
+            throw new HintException('Quota response is not okay.');
+        }
+    }
 }
